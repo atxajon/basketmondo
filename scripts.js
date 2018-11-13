@@ -16,56 +16,63 @@ document.addEventListener('DOMContentLoaded', function(event) {
   
   // Runs on init.
   getJSONdata().then(function(promiseValue) {
-    let _table_ = document.createElement('table'),
-    _tr_ = document.createElement('tr'),
-    _th_ = document.createElement('th'),
-    _td_ = document.createElement('td');
+    let table  = document.createElement('table');
+    table.setAttribute('class', 'sortable');
     
-    // Builds the HTML Table out of myList json data from Ivy restful service.
-    function buildHtmlTable(arr) {
-      var table = _table_.cloneNode(false),
-      columns = addAllColumnHeaders(arr, table);
-      table.setAttribute('class', 'sortable');
-      console.log('class added');
-
-      for (var i=0, maxi=arr.length; i < maxi; ++i) {
-        var tr = _tr_.cloneNode(false);
-        for (var j=0, maxj=columns.length; j < maxj ; ++j) {
-          var td = _td_.cloneNode(false);
-          cellValue = arr[i][columns[j]];
-          td.appendChild(document.createTextNode(arr[i][columns[j]] || ''));
-          tr.appendChild(td);
-        }
-        table.appendChild(tr);
-      }
-      return table;
-    }
-    
-    // Adds a header row to the table and returns the set of columns.
-    // Need to do union of keys from all records as some records may not contain
-    // all records
-    function addAllColumnHeaders(arr, table) {
-      let columnSet = [],
-      tr = _tr_.cloneNode(false);
-      // Exclude certain columns.
-      let excluded = ['id', 'role2', 'photo', 'logo', 'teamId', 'status'];
-      for (var i=0, l=arr.length; i < l; i++) {
-        for (var key in arr[i]) {
-          if (arr[i].hasOwnProperty(key) && columnSet.indexOf(key)===-1) {
-            if (inArray(key,excluded)) {
-              continue;
-            }
-            columnSet.push(key);
-            var th = _th_.cloneNode(false);
-            th.appendChild(document.createTextNode(key));
-            tr.appendChild(th);
+    const noOfPlayers = Object.keys(promiseValue).length;
+    // Retrieve column header.
+    let col = [];
+    // Exclude certain col data.
+    let excluded = ['id', 'role2', 'photo', 'logo', 'teamId', 'status'];
+    for (let i = 0; i < noOfPlayers; i++) {
+      for (let key in promiseValue[i]) {
+        if (col.indexOf(key) === -1) {
+          if (inArray(key, excluded)) {
+            continue;
           }
+          col.push(key);
         }
       }
-      table.appendChild(tr);
-      return columnSet;
     }
     
+    
+    // CREATE TABLE HEAD.
+    let tHead = document.createElement('thead');	
+    // CREATE ROW FOR TABLE HEAD.
+    var hRow = document.createElement('tr');
+    
+    // ADD COLUMN HEADER TO ROW OF TABLE HEAD.
+    for (let i = 0; i < col.length; i++) {
+      var th = document.createElement('th');
+      th.innerHTML = col[i];
+      hRow.appendChild(th);
+    }
+    
+    tHead.appendChild(hRow);
+    table.appendChild(tHead);
+    
+    // CREATE TABLE BODY.
+    let tBody = document.createElement('tbody');	
+    
+    // ADD COLUMN HEADER TO ROW OF TABLE HEAD.
+    for (let i = 0; i < noOfPlayers; i++) {
+      let bRow = document.createElement('tr');
+      for (let j = 0; j < col.length; j++) {
+        var td = document.createElement('td');
+        td.innerHTML = promiseValue[i][col[j]];
+        bRow.appendChild(td);
+      }
+      tBody.appendChild(bRow)
+      
+    }
+    table.appendChild(tBody);	
+    
+		// FINALLY ADD THE NEWLY CREATED TABLE WITH JSON DATA TO A CONTAINER.
+    var divContainer = document.getElementById('players');
+    divContainer.appendChild(table);
+    
+    // Add data sorting through DataTable plugin.
+    $('.sortable').DataTable();
     
     function inArray(needle, haystack) {
       var length = haystack.length;
@@ -76,12 +83,6 @@ document.addEventListener('DOMContentLoaded', function(event) {
     }
     
     
-    
-
-    document.body.appendChild(buildHtmlTable(promiseValue));
-    $(document).ready( function () {
-      $('.sortable').DataTable();
-    } );
   })
   
 })
