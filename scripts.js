@@ -37,6 +37,8 @@ document.addEventListener('DOMContentLoaded', function(event) {
       if (key === 'average') {
         col.push('average');
         col.push('averageLastFive');
+        col.push('Return from Average (in %)');
+        col.push('Return from AverageLastFive (in %)');
         continue;
       }
       col.push(key);
@@ -83,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function(event) {
 
         // if promiseValue[i][col[j]] is Obj split it into td's with its relevant Average's data.
         if (typeof promiseValue[i][col[j]] === 'object' && promiseValue[i][col[j]] !== null) {
-          let avgContent = promiseValue[i][col[j]].average;
+          let avgContent = roundToTwo(promiseValue[i][col[j]].average);
           let tdAvgContent = document.createElement('td');
 
           tdAvgContent.innerHTML = avgContent;
@@ -93,6 +95,27 @@ document.addEventListener('DOMContentLoaded', function(event) {
           let tdAvgLastFiveContent = promiseValue[i][col[j]].averageLastFive;
           tdAvgContentLastFive.innerHTML = tdAvgLastFiveContent;
           bRow.appendChild(tdAvgContentLastFive);
+
+          // Calculate ratio value-to-avgPoints and add to table col.
+          const value = promiseValue[i].value;
+          let ratio = roundToTwo((avgContent * 1000000 / value) * 100) ;
+          let tdRatio = document.createElement('td');
+
+
+          if (tdAvgLastFiveContent <= 0) {
+            ratio = 0;
+          }
+          tdRatio.innerHTML = ratio;
+          bRow.appendChild(tdRatio);
+          
+          // Calculate ratio value-to-avgLastFivePoints and add to table col.
+          let lastFiveRatio = roundToTwo((tdAvgLastFiveContent * 1000000 / value) * 100) ;
+          if (tdAvgLastFiveContent <= 0) {
+            ratio = 0;
+          }
+          td.innerHTML = lastFiveRatio;
+          bRow.appendChild(td);
+          
         }
         else {
           td.innerHTML = content;
@@ -136,11 +159,11 @@ document.addEventListener('DOMContentLoaded', function(event) {
         // Right align classes.
         { 
           "sClass": "dt-right", 
-          "aTargets": [ 3, 4, 6, 7, 8] 
+          "aTargets": [ 3, 4, 6, 7, 8, 9, 10] 
         },
         { 
           "sType": "numeric-comma", 
-          "aTargets": [4, 8] 
+          "aTargets": [4, 10] 
         },
         // When clicking on col headers sort first in desc.
         {
@@ -156,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function(event) {
       "order": [[ 6, "desc" ]],
     });
 
-    
+
     // @todo: plain js equivalent...
     // const myTable = document.querySelector("#sortable");
     // new DataTable(myTable);
@@ -168,6 +191,10 @@ document.addEventListener('DOMContentLoaded', function(event) {
         if(haystack[i] == needle) return true;
       }
       return false;
+    }
+    
+    function roundToTwo(num) {    
+      return +(Math.round(num + "e+2")  + "e-2");
     }
   })
   
