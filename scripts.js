@@ -17,24 +17,28 @@ document.addEventListener('DOMContentLoaded', function(event) {
   // Runs on init.
   getJSONdata().then(function(promiseValue) {
     let table  = document.createElement('table');
-    table.setAttribute('class', 'sortable');
+    table.setAttribute('id', 'sortable');
+    table.setAttribute('class', 'display');
+
+    // http://www.webtrainingcentre.com/javascript-solutions/create-a-dynamic-table-using-json-and-javascript/
     
     const noOfPlayers = Object.keys(promiseValue).length;
-    // Retrieve column header.
     let col = [];
     // Exclude certain col data.
-    let excluded = ['id', 'role2', 'photo', 'logo', 'teamId', 'status'];
-    for (let i = 0; i < noOfPlayers; i++) {
-      for (let key in promiseValue[i]) {
-        if (col.indexOf(key) === -1) {
-          if (inArray(key, excluded)) {
-            continue;
-          }
-          col.push(key);
-        }
+    let excluded = ['id', 'role2', 'photo', 'logo', 'teamId', 'status', 'rating'];
+
+    // Get from 1st player in promiseValue's property the keys to make up the table headers.
+    for (let key in promiseValue[0]) {
+      if (inArray(key, excluded)) {
+        continue;
       }
+      if (key === 'average') {
+        col.push('average');
+        col.push('averageLastFive');
+        continue;
+      }
+      col.push(key);
     }
-    
     
     // CREATE TABLE HEAD.
     let tHead = document.createElement('thead');	
@@ -58,9 +62,34 @@ document.addEventListener('DOMContentLoaded', function(event) {
     for (let i = 0; i < noOfPlayers; i++) {
       let bRow = document.createElement('tr');
       for (let j = 0; j < col.length; j++) {
-        var td = document.createElement('td');
-        td.innerHTML = promiseValue[i][col[j]];
-        bRow.appendChild(td);
+        let td = document.createElement('td');
+
+        // Prevent showing 'undefined' on table column 'averageLastFive';
+        // This happens because we added above a hardcoded table col 'averageLastFive', 
+        // but promiseValue obj does not have a property key 'averageLastFive',
+        // it has an average obj that contains all this data nested inside its properties. 
+        if (typeof promiseValue[i][col[j]] === 'undefined') {
+          continue;
+        }
+        let content = promiseValue[i][col[j]];
+
+        // if promiseValue[i][col[j]] is Obj split it into td's with its relevant Average's data.
+        if (typeof promiseValue[i][col[j]] === 'object' && promiseValue[i][col[j]] !== null) {
+          let avgContent = promiseValue[i][col[j]].average;
+          let tdAvgContent = document.createElement('td');
+
+          tdAvgContent.innerHTML = avgContent;
+          bRow.appendChild(tdAvgContent);
+
+          let tdAvgContentLastFive = document.createElement('td');
+          let tdAvgLastFiveContent = promiseValue[i][col[j]].averageLastFive;
+          tdAvgContentLastFive.innerHTML = tdAvgLastFiveContent;
+          bRow.appendChild(tdAvgContentLastFive);
+        }
+        else {
+          td.innerHTML = content;
+          bRow.appendChild(td);
+        }
       }
       tBody.appendChild(bRow)
       
@@ -71,8 +100,24 @@ document.addEventListener('DOMContentLoaded', function(event) {
     var divContainer = document.getElementById('players');
     divContainer.appendChild(table);
     
-    // Add data sorting through DataTable plugin.
-    $('.sortable').DataTable();
+    // Add data sorting through DataTable plugin.    
+    $('#sortable').DataTable({
+      "aoColumnDefs": [
+        { "sClass": "dt-right", "aTargets": [ 3, 4, 6, 7, 8] },
+      ],
+      "columnDefs": [
+        // { "type": "numeric-comma", targets: 3 }
+        { "type": "numeric-comma", "aTargets": [ 3, 4, 6, 7, 8] },
+      ],
+      "language": {
+        "decimal": ",",
+        "thousands": "."
+      }
+    });
+    // @todo: plain js equivalent...
+    // const myTable = document.querySelector("#sortable");
+    // new DataTable(myTable);
+    
     
     function inArray(needle, haystack) {
       var length = haystack.length;
@@ -81,8 +126,6 @@ document.addEventListener('DOMContentLoaded', function(event) {
       }
       return false;
     }
-    
-    
   })
   
 })
