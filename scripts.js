@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', function(event) {
     let col = [];
     // Exclude certain col data.
     let excluded = ['id', 'role2', 'photo', 'logo', 'teamId', 'status', 'rating'];
+    // Define cols that will output as currency formated.
+    let currencyFormated = ['value', 'change'];
 
     // Get from 1st player in promiseValue's property the keys to make up the table headers.
     for (let key in promiseValue[0]) {
@@ -51,13 +53,17 @@ document.addEventListener('DOMContentLoaded', function(event) {
       th.innerHTML = col[i];
       hRow.appendChild(th);
     }
-    
     tHead.appendChild(hRow);
     table.appendChild(tHead);
     
     // CREATE TABLE BODY.
     let tBody = document.createElement('tbody');	
-    
+
+    const formatter = new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0
+    })
     // ADD COLUMN HEADER TO ROW OF TABLE HEAD.
     for (let i = 0; i < noOfPlayers; i++) {
       let bRow = document.createElement('tr');
@@ -71,7 +77,9 @@ document.addEventListener('DOMContentLoaded', function(event) {
         if (typeof promiseValue[i][col[j]] === 'undefined') {
           continue;
         }
+
         let content = promiseValue[i][col[j]];
+        content = (inArray(col[j], currencyFormated)) ? formatter.format(content)  : content;
 
         // if promiseValue[i][col[j]] is Obj split it into td's with its relevant Average's data.
         if (typeof promiseValue[i][col[j]] === 'object' && promiseValue[i][col[j]] !== null) {
@@ -99,21 +107,56 @@ document.addEventListener('DOMContentLoaded', function(event) {
 		// FINALLY ADD THE NEWLY CREATED TABLE WITH JSON DATA TO A CONTAINER.
     var divContainer = document.getElementById('players');
     divContainer.appendChild(table);
+
+
+    // Add DataTable sorting for currency formatted data col cells.
+    // @todo: refactor all datatable configuraiton to its own dedicated file.
+    jQuery.fn.dataTableExt.oSort['numeric-comma-asc']  = function(a,b) {
+      var x = (a == "-") ? 0 : a.replace( /,/, "." );
+      var y = (b == "-") ? 0 : b.replace( /,/, "." );
+      x = parseFloat( x );
+      y = parseFloat( y );
+      return ((x < y) ? -1 : ((x > y) ?  1 : 0));
+    };
+    
+    jQuery.fn.dataTableExt.oSort['numeric-comma-desc'] = function(a,b) {
+      var x = (a == "-") ? 0 : a.replace( /,/, "." );
+      var y = (b == "-") ? 0 : b.replace( /,/, "." );
+      x = parseFloat( x );
+      y = parseFloat( y );
+      return ((x < y) ?  1 : ((x > y) ? -1 : 0));
+    };
     
     // Add data sorting through DataTable plugin.    
     $('#sortable').DataTable({
+      // Default table rows to show.
+      "iDisplayLength": 50,
+      "sortInitialOrder": "desc",
       "aoColumnDefs": [
-        { "sClass": "dt-right", "aTargets": [ 3, 4, 6, 7, 8] },
+        // Right align classes.
+        { 
+          "sClass": "dt-right", 
+          "aTargets": [ 3, 4, 6, 7, 8] 
+        },
+        { 
+          "sType": "numeric-comma", 
+          "aTargets": [4, 8] 
+        },
+        // When clicking on col headers sort first in desc.
+        {
+          "orderSequence": [
+            'desc', 
+            'asc'
+          ],
+          // Applied to all table columns.
+          "targets": "_all"
+        } 
       ],
-      "columnDefs": [
-        // { "type": "numeric-comma", targets: 3 }
-        { "type": "numeric-comma", "aTargets": [ 3, 4, 6, 7, 8] },
-      ],
-      "language": {
-        "decimal": ",",
-        "thousands": "."
-      }
+      // Defaul sorting: average descending.
+      "order": [[ 6, "desc" ]],
     });
+
+    
     // @todo: plain js equivalent...
     // const myTable = document.querySelector("#sortable");
     // new DataTable(myTable);
